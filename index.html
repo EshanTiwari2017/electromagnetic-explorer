@@ -1,0 +1,327 @@
+import React, { useState, useMemo } from 'react';
+import { Info, HelpCircle, Activity, Zap, BookOpen, Palette } from 'lucide-react';
+
+const App = () => {
+  const [inputValue, setInputValue] = useState(555);
+  const [unit, setUnit] = useState('nm');
+
+  const units = {
+    pm: 1e-12,
+    nm: 1e-9,
+    µm: 1e-6,
+    mm: 1e-3,
+    cm: 1e-2,
+    m: 1,
+    km: 1e3,
+  };
+
+  const wavelengthInMeters = useMemo(() => {
+    const val = parseFloat(inputValue);
+    if (isNaN(val)) return 0;
+    return val * units[unit];
+  }, [inputValue, unit]);
+
+  const categories = [
+    { 
+      id: 'gamma', 
+      name: 'Gamma rays', 
+      min: 0, 
+      max: 10e-12, 
+      color: 'bg-indigo-900', 
+      text: 'text-white',
+      desc: 'Medicine & energy'
+    },
+    { 
+      id: 'xray', 
+      name: 'X-rays', 
+      min: 10e-12, 
+      max: 10e-9, 
+      color: 'bg-blue-800', 
+      text: 'text-white',
+      desc: 'Imaging & security'
+    },
+    { 
+      id: 'uv', 
+      name: 'Ultraviolet', 
+      min: 10e-9, 
+      max: 400e-9, 
+      color: 'bg-purple-600', 
+      text: 'text-white',
+      desc: 'Sunlight & hygiene'
+    },
+    { 
+      id: 'visible', 
+      name: 'Visible light', 
+      min: 400e-9, 
+      max: 750e-9, 
+      color: 'bg-gradient-to-r from-violet-500 via-green-400 to-red-500', 
+      text: 'text-black font-bold',
+      desc: 'What we see'
+    },
+    { 
+      id: 'ir', 
+      name: 'Infrared', 
+      min: 750e-9, 
+      max: 1e-3, 
+      color: 'bg-red-800', 
+      text: 'text-white',
+      desc: 'Heat & remotes'
+    },
+    { 
+      id: 'micro', 
+      name: 'Microwaves', 
+      min: 1e-3, 
+      max: 1, 
+      color: 'bg-orange-600', 
+      text: 'text-white',
+      desc: 'Wi-Fi & cooking'
+    },
+    { 
+      id: 'radio', 
+      name: 'Radio waves', 
+      min: 1, 
+      max: Infinity, 
+      color: 'bg-gray-700', 
+      text: 'text-white',
+      desc: 'Radio & TV signals'
+    },
+  ];
+
+  const currentCategory = categories.find(
+    (c) => wavelengthInMeters >= c.min && wavelengthInMeters < c.max
+  ) || categories[categories.length - 1];
+
+  // Colors based on your specific ranges
+  const visibleColors = [
+    { name: 'Violet', min: 400, max: 450, color: '#8B00FF' },
+    { name: 'Indigo', min: 450, max: 485, color: '#4B0082' },
+    { name: 'Blue', min: 485, max: 500, color: '#0000FF' },
+    { name: 'Green', min: 500, max: 565, color: '#00FF00' },
+    { name: 'Yellow', min: 565, max: 590, color: '#FFFF00' },
+    { name: 'Orange', min: 590, max: 625, color: '#FF7F00' },
+    { name: 'Red', min: 625, max: 750, color: '#FF0000' },
+  ];
+
+  const wavelengthInNm = wavelengthInMeters * 1e9;
+  const currentColor = visibleColors.find(
+    (c) => wavelengthInNm >= c.min && wavelengthInNm < c.max
+  );
+
+  const getMarkerPosition = (val) => {
+    const segmentWidth = 100 / categories.length;
+    const catIndex = categories.findIndex(c => val >= c.min && val < c.max);
+    const index = catIndex === -1 ? categories.length - 1 : catIndex;
+    
+    const cat = categories[index];
+    let internalPercent = 0;
+    
+    if (cat.max === Infinity) {
+      internalPercent = Math.min((val - cat.min) / 10, 1);
+    } else {
+      const logMin = Math.log10(cat.min === 0 ? 1e-15 : cat.min);
+      const logMax = Math.log10(cat.max);
+      const logVal = Math.log10(val === 0 ? 1e-15 : val);
+      internalPercent = (logVal - logMin) / (logMax - logMin);
+    }
+    
+    return (index * segmentWidth) + (internalPercent * segmentWidth);
+  };
+
+  const getVisibleMarkerPosition = (nm) => {
+    return ((nm - 400) / (750 - 400)) * 100;
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-800">
+      <div className="max-w-4xl mx-auto space-y-8">
+        <header className="text-center space-y-2">
+          <h1 className="text-3xl font-bold text-slate-900 flex items-center justify-center gap-2">
+            <Activity className="text-blue-600" />
+            EM Spectrum Explorer
+          </h1>
+          <p className=Hi friends! This tool will identify the type of EM wave.</p>
+        </header>
+
+        {/* Input Card */}
+        <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Wavelength Value</label>
+              <input
+                type="number"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Unit</label>
+              <select
+                value={unit}
+                onChange={(e) => setUnit(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
+              >
+                <option value="pm">Picometers (pm)</option>
+                <option value="nm">Nanometers (nm)</option>
+                <option value="µm">Micrometers (µm)</option>
+                <option value="mm">Millimeters (mm)</option>
+                <option value="cm">Centimeters (cm)</option>
+                <option value="m">Meters (m)</option>
+                <option value="km">Kilometers (km)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-4 items-center justify-between p-4 bg-slate-100 rounded-xl border border-slate-200">
+            <div>
+              <span className="text-[10px] text-slate-400 block uppercase font-black tracking-widest">Classification</span>
+              <span className={`text-xl font-bold ${currentCategory.id === 'visible' ? 'text-blue-600' : 'text-slate-900'}`}>
+                {currentCategory.name}
+              </span>
+            </div>
+            <div className="text-right">
+              <span className="text-[10px] text-slate-400 block uppercase font-black tracking-widest">Base Meters</span>
+              <span className="text-lg font-mono text-slate-600">
+                {wavelengthInMeters.toExponential(2)} m
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {/* Main Spectrum Section */}
+        <section className="space-y-4">
+          <h2 className="text-sm font-bold flex items-center gap-2 text-slate-500 uppercase tracking-widest">
+            <Zap size={16} className="text-amber-500" />
+            Full Spectrum Range
+          </h2>
+          <div className="relative h-14 bg-slate-200 rounded-xl overflow-hidden flex border-2 border-white shadow-sm">
+            {categories.map((cat) => (
+              <div 
+                key={cat.id}
+                className={`${cat.color} h-full flex items-center justify-center relative`}
+                style={{ width: `${100 / categories.length}%` }}
+              >
+                <span className={`text-[8px] md:text-[9px] text-center font-bold px-0.5 pointer-events-none select-none ${cat.text}`}>
+                  {cat.name.split(' ')[0]}
+                </span>
+              </div>
+            ))}
+            
+            <div 
+              className="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_10px_rgba(0,0,0,0.5)] z-10 transition-all duration-500"
+              style={{ left: `${getMarkerPosition(wavelengthInMeters)}%` }}
+            >
+              <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-4 h-4 bg-white rotate-45 border-2 border-slate-800"></div>
+              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-4 bg-white rotate-45 border-2 border-slate-800"></div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-7 gap-1 px-1">
+            {categories.map((cat) => (
+              <div key={cat.id + "-desc"} className="text-center">
+                <p className={`text-[9px] md:text-[10px] leading-tight font-medium ${currentCategory.id === cat.id ? 'text-blue-600 font-bold' : 'text-slate-400'}`}>
+                  {cat.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Visible Light Detail (Only when in Visible range) */}
+        {currentCategory.id === 'visible' && (
+          <section className="pt-2 space-y-4 animate-in fade-in zoom-in-95 duration-300">
+            <div className="flex justify-between items-center px-1">
+              <h2 className="text-sm font-bold flex items-center gap-2 text-slate-500 uppercase tracking-widest">
+                <Palette size={16} className="text-purple-500" />
+                Color Identification
+              </h2>
+              {currentColor && (
+                <div className="flex items-center gap-3">
+                  <div className="flex flex-col items-end">
+                    <span className="text-xs font-black uppercase text-slate-800" style={{ color: currentColor.color }}>
+                      {currentColor.name}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      Range: {currentColor.min}-{currentColor.max} nm
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="relative h-10 rounded-xl overflow-hidden flex border-2 border-white shadow-md">
+              {visibleColors.map((color, idx) => {
+                // Width based on the custom ranges provided
+                const width = ((color.max - color.min) / (750 - 400)) * 100;
+                return (
+                  <div 
+                    key={idx}
+                    className="h-full relative group"
+                    style={{ backgroundColor: color.color, width: `${width}%` }}
+                  >
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                      <span className="text-[8px] font-bold text-white drop-shadow-md">
+                        {color.name}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+
+              <div 
+                className="absolute top-0 bottom-0 w-1.5 bg-white shadow-xl z-20 transition-all duration-300"
+                style={{ left: `${getVisibleMarkerPosition(wavelengthInNm)}%` }}
+              >
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-slate-900 border-2 border-white shadow-lg"></div>
+              </div>
+            </div>
+            <div className="flex justify-between text-[10px] text-slate-400 font-bold px-1 uppercase tracking-tighter">
+              <span>400 nm (Violet)</span>
+              <span>750 nm (Red)</span>
+            </div>
+          </section>
+        )}
+
+        {/* Educational Details Footer */}
+        <footer className="pt-10 border-t border-slate-200">
+          <h2 className="text-sm font-bold flex items-center gap-2 text-slate-800 uppercase tracking-widest mb-6">
+            <BookOpen size={16} className="text-blue-500" />
+            Electromagnetic Wave Details
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="space-y-2">
+              <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                The Spectrum
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                The spectrum includes all types of electromagnetic radiation. These are energy waves that travel through space, ranging from huge radio waves to tiny gamma rays.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                Frequency & Energy
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                As the wavelength gets shorter, the frequency and energy increase. This is why Gamma rays and X-rays can pass through objects while visible light cannot.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                Visible Portion
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Visible light is just a tiny sliver in the middle. Human eyes are only tuned to see waves between 400 and 750 nanometers. Everything else is invisible to us!
+              </p>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </div>
+  );
+};
+
+export default App;
+
